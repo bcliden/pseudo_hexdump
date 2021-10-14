@@ -13,7 +13,7 @@ impl LineCounter {
         }
     }
     pub fn increment(&mut self) {
-        self.count = self.count + self.step;
+        self.count += self.step;
     }
 }
 impl Default for LineCounter {

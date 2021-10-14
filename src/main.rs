@@ -40,45 +40,45 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         None => Box::new(io::stdout()),
     };
 
-    while let Ok(_) = file.read_exact(&mut buf) {
+    while file.read_exact(&mut buf).is_ok() {
         write!(&mut out, "[{:#08x}] ", ln)?;
-        // write_line_hex(Box::new(&mut out), &buf);
-        // write_line_ascii(Box::new(&mut out), &buf);
-        write_line_hex(&mut out, &buf);
-        write_line_ascii(&mut out, &buf);
-        write!(&mut out, "\n")?;
+        write_line_hex(&mut out, &buf)?;
+        write_line_ascii(&mut out, &buf)?;
+        writeln!(&mut out)?;
         ln.increment();
     }
     Ok(())
 }
 
-fn write_line_hex(out: &mut Box<dyn Write>, buf: &[u8]) {
+fn write_line_hex(out: &mut Box<dyn Write>, buf: &[u8]) -> Result<(), Box<dyn error::Error>> {
     for (index, byte) in buf.bytes().enumerate() {
         let byte = byte.unwrap_or(ASCII_PERIOD);
-        write!(out, "{:02x} ", byte).ok();
+        write!(out, "{:02x} ", byte)?;
 
         // if we've printed 4 bytes, add a gutter
         if (index + 1) % 4 == 0 {
-            write!(out, " ").ok();
+            write!(out, " ")?;
         };
     }
+    Ok(())
 }
 
 fn is_crlf(c: char) -> bool {
     c == 0x0a as char || c == 0x0d as char
 }
 
-fn write_line_ascii(out: &mut Box<dyn Write>, buf: &[u8]) {
-    write!(out, "|").ok();
+fn write_line_ascii(out: &mut Box<dyn Write>, buf: &[u8]) -> Result<(), Box<dyn error::Error>> {
+    write!(out, "|")?;
     for byte in buf.bytes() {
         match byte.unwrap_or(ASCII_PERIOD) as char {
-            c if is_crlf(c) => write!(out, "{}", '.').ok(),
-            c if c.is_ascii_whitespace() => write!(out, "{}", ' ').ok(),
-            c if c.is_ascii_graphic() => write!(out, "{}", c).ok(),
-            _ => write!(out, "{}", '.').ok(),
+            c if is_crlf(c) => write!(out, ".")?,
+            c if c.is_ascii_whitespace() => write!(out, " ")?,
+            c if c.is_ascii_graphic() => write!(out, "{}", c)?,
+            _ => write!(out, ".")?,
         };
     }
-    write!(out, "|").ok();
+    write!(out, "|")?;
+    Ok(())
 }
 
 #[cfg(test)]
