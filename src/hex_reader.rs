@@ -144,7 +144,7 @@ impl HexLineReader {
     }
 }
 
-impl<'a> IntoIterator for HexLineReader {
+impl IntoIterator for HexLineReader {
     type Item = String;
     type IntoIter = HexReaderIterator;
 
