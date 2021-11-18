@@ -16,18 +16,19 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 #[structopt(name = "pseudo_hexdump", author = "Benjamin Liden")]
 struct Opt {
+    /// input file to read bytes from
     #[structopt(parse(from_os_str))]
     input: PathBuf,
 
-    /// Output file, stdout if not present. Really should just use bash for this
+    /// Optional output file, stdout if not present
     #[structopt(parse(from_os_str))]
     output: Option<PathBuf>,
 
-    // number of bytes wide to print
+    /// number of bytes wide to print
     #[structopt(short, long, default_value = "16")]
     num_bytes: usize,
 
-    // after how many bytes to print columns
+    /// how many bytes comprise a column?
     #[structopt(short, long, default_value = "4")]
     gutter_interval: usize,
 }
@@ -55,7 +56,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         None => {
             /*
               I don't know why this works (yet), but:
-              https://stackoverflow.com/a/41549727
+                    https://stackoverflow.com/a/41549727
               (read the Rust docs for Box::leak)
             */
             let stdout = Box::leak(Box::new(io::stdout()));
