@@ -1,6 +1,6 @@
+use anyhow::{Context, Result};
 use std::io::Read;
 use std::iter::{IntoIterator, Iterator};
-use anyhow::{Context, Result};
 
 use crate::line_counter::LineCounter;
 use crate::text_utilities::{is_crlf, is_gutter, pad_spaces, Formatting, ASCII_PERIOD};
@@ -25,7 +25,6 @@ pub struct HexLineReader {
 }
 
 impl HexLineReader {
-
     /// Get new HexLineReader instance
     /// # Arguments
     /// * in_file - Reader from which to pull bytes
@@ -61,7 +60,7 @@ impl HexLineReader {
     }
 
     /// Read current buffer as hex representation
-    /// 
+    ///
     /// This will include some formatting (gutters primarily)
     fn buf_as_hex_string(&self) -> Result<String> {
         let buf = self.get_buf_ref();
@@ -80,7 +79,7 @@ impl HexLineReader {
     }
 
     /// Read current buffer as ASCII representation
-    /// 
+    ///
     /// This will include some substitutions and ignore whitespace
     ///     (\r || \n => '.')
     ///     (whitespace => ' ')
@@ -101,10 +100,10 @@ impl HexLineReader {
         Ok(s.into_iter().collect())
     }
 
-    /// Get next line representation. 
-    /// 
+    /// Get next line representation.
+    ///
     /// Will print both address, hex, and ascii representation.
-    /// 
+    ///
     /// # Example
     /// `[address] hex add res ses |ascii.representation|`
     pub fn get_next_line(&mut self) -> Option<String> {
@@ -162,5 +161,41 @@ impl Iterator for HexReaderIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.hr.get_next_line()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::io::Cursor;
+
+    use crate::{hex_reader::HexLineReader, text_utilities::Formatting};
+
+    fn get_hex_line_reader() -> HexLineReader {
+        let v: Vec<u8> = "This is a test file \n I wonder what's in here \r\n"
+            .to_string().into_bytes();
+        let buf = Cursor::new(v);
+        let fmt = Formatting::default();
+        let hlr = HexLineReader::new(Box::new(buf), fmt);
+        hlr
+    }
+
+    #[test]
+    fn test_fill_next_buf() {
+        let mut hlr = get_hex_line_reader();
+        assert_eq!(hlr.bytes_read, 0);
+        assert!(hlr.buf.iter().all(|&v| v == 0)); // it's zeroed out
+
+        hlr.fill_buf_next().unwrap();
+
+        assert_eq!(hlr.bytes_read, 16);
+        assert!(!hlr.buf.iter().all(|&c| c == 0)); // not all zeroes
+    }
+
+    #[test]
+    fn test_get_buf_ref() {
+        let mut hlr = get_hex_line_reader();
+        assert_eq!(hlr.get_buf_ref(), &vec![]); // 0 bytes read, 0 bytes in buffer
+        hlr.fill_buf_next().unwrap();
+        assert_eq!(hlr.get_buf_ref(), &vec![84, 104, 105, 115, 32, 105, 115, 32, 97, 32, 116, 101, 115, 116, 32, 102]); // 16 bytes read, 16 bytes in buffer
     }
 }

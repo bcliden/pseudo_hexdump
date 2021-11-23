@@ -12,6 +12,17 @@ pub struct Formatting {
     pub hex_line_width: usize,
 }
 
+impl Default for Formatting {
+    fn default() -> Self {
+        Self { 
+            bytes_to_read: 16, 
+            gutter_per_n_bytes: 4, 
+            ascii_line_width: 52, 
+            hex_line_width: 16 
+        }
+    }
+}
+
 /// get a specific number of spaces as string
 /// 
 /// # Arguments
