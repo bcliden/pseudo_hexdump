@@ -1,17 +1,17 @@
 use pseudo_hexdump::{hex_reader::HexLineReader, text_utilities::Formatting};
 
-use std::error;
+use anyhow::{Context, Result};
 use std::fs::File;
 use std::io::{self, Write};
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-/**
- * TODO:
- * - [ ] gutter size of zero
- * - [ ] fix spacing after ascii row when gutter is at end (cargo run ./src/main.rs -g 4 -n 8)
- */
+/*
+  TODO:
+  - [ ] gutter size of zero
+  - [ ] fix spacing after ascii row when gutter is at end (cargo run ./src/main.rs -g 4 -n 8)
+*/
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "pseudo_hexdump", author = "Benjamin Liden")]
@@ -33,7 +33,7 @@ struct Opt {
     gutter_interval: usize,
 }
 
-fn main() -> Result<(), Box<dyn error::Error>> {
+fn main() -> Result<()> {
     let opt = Opt::from_args();
 
     let format_cfg = Formatting {
@@ -44,13 +44,15 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         hex_line_width: opt.num_bytes,
     };
 
-    let file = File::open(&opt.input)?;
+    let file = File::open(&opt.input)
+        .with_context(|| format!("Failed to open file: {}", opt.input.to_string_lossy()))?;
     let reader = BufReader::new(file);
 
     // Get type of output
     let mut out: Box<dyn Write> = match opt.output {
         Some(p) => {
-            let file = File::create(p)?;
+            let file = File::create(p.clone())
+                .with_context(|| format!("File {} could not be created", p.to_string_lossy()))?;
             Box::new(BufWriter::new(file))
         }
         None => {
@@ -61,13 +63,13 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             */
             let stdout = Box::leak(Box::new(io::stdout()));
             Box::new(stdout.lock())
-        },
+        }
     };
 
     // open HexLineReader and iterate over lines
     let hr = HexLineReader::new(Box::new(reader), format_cfg);
     for line in hr {
-        write!(out, "{}", line)?;
+        write!(out, "{}", line).with_context(|| format!("Failed to write line {}", line))?;
     }
     Ok(())
 }

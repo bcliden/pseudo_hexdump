@@ -1,6 +1,6 @@
-use std::error;
 use std::io::Read;
 use std::iter::{IntoIterator, Iterator};
+use anyhow::{Context, Result};
 
 use crate::line_counter::LineCounter;
 use crate::text_utilities::{is_crlf, is_gutter, pad_spaces, Formatting, ASCII_PERIOD};
@@ -42,7 +42,7 @@ impl HexLineReader {
     }
 
     /// Fill own buffer with bytes from in_file
-    fn fill_buf_next(&mut self) -> Result<(), std::io::Error> {
+    fn fill_buf_next(&mut self) -> Result<()> {
         match self.in_file.read(self.buf.as_mut_slice()) {
             Ok(n_bytes) => {
                 self.bytes_read = n_bytes;
@@ -50,7 +50,7 @@ impl HexLineReader {
             }
             Err(e) => {
                 self.bytes_read = 0;
-                Err(e)
+                Err(e).context("failed to get bytes from HexReader file")
             }
         }
     }
@@ -63,7 +63,7 @@ impl HexLineReader {
     /// Read current buffer as hex representation
     /// 
     /// This will include some formatting (gutters primarily)
-    fn buf_as_hex_string(&self) -> Result<String, Box<dyn error::Error>> {
+    fn buf_as_hex_string(&self) -> Result<String> {
         let buf = self.get_buf_ref();
         let mut s = Vec::<char>::with_capacity(self.cfg.ascii_line_width);
 
@@ -85,7 +85,7 @@ impl HexLineReader {
     ///     (\r || \n => '.')
     ///     (whitespace => ' ')
     ///     (unknown => '.')
-    fn buf_as_ascii_string(&self) -> Result<String, Box<dyn error::Error>> {
+    fn buf_as_ascii_string(&self) -> Result<String> {
         let buf = self.get_buf_ref();
         let mut s = Vec::<char>::with_capacity(self.cfg.hex_line_width);
 
